@@ -1,0 +1,69 @@
+const express = require('express');
+const { dirname } = require('path');
+const app= express();
+const port = 5000;
+
+app.use(express.json());
+
+const tasks=[];
+let nextID=1;
+
+app.get('/',(req,res)=>{
+    res.sendFile(__dirname + '/index.html')
+})
+app.get('/t',(req,res)=>{
+    res.status(200). json(tasks)
+})
+app.post('/t',(req,res)=>{
+    let text= req.body.txt;
+    if(!text){
+      return res.status(400). json({message:"אין טקסט"})
+    }
+    let id=nextID++;
+    let isDone = false;
+    let task ={id,text,isDone};
+    tasks[id]=task;
+    task.push(task);
+    res.status(201). json({message:"ok"})
+})
+app.get('/t/:id', (req, res) => {
+  let id = parseInt(req.params.id);
+  let task = tasks.find(t => t.id === id);
+      if (!task) {
+       return res.status(404).json({ message: "אינו קיים" });
+    }
+  res.json(task);
+});
+
+
+app.delete('/t/:id', (req, res) => {
+  let id = parseInt(req.params.id);
+  let index = tasks.findIndex(t => t.id === id);
+
+      if (index === -1) {
+      return res.status(404).json({ message: "אינו קיים" });
+    }
+
+    tasks.splice(index, 1);
+   res.json({ message: "Delete!" });
+});
+
+app.patch('/t/:id', (req, res) => {
+  let id = parseInt(req.params.id);
+  let task = tasks.find(t => t.id === id);
+      if (!task) {
+      return res.status(404).json({ message: "אינו קיים" });
+   }
+
+      if (req.body.isDone !== undefined) {
+       task.isDone = req.body.isDone;
+    }
+      if (req.body.txt) {
+       task.text = req.body.txt;
+    }
+
+  res.json(task);
+});
+
+
+app.listen(port,()=>{console.log(`http://localhost:${port}`)});
