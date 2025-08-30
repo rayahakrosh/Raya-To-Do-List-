@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>To Do List</h1>
+    <div>
+        <input type="hidden" id="id">
+        <label for="txt">Text :</label>
+        <br>
+        <textarea id="txt" maxlength="50"></textarea>
+        <button onclick="addTask()">send</button>
+    </div>
+ <table border="1">
+    <thead>
+        <tr>
+            
+            <th>ID</th>
+            <th>Text</th>
+            <th>IsDone</th>
+            <th>Edit</th>
+            <th>Delete</th>
+
+        </tr>
+
+    </thead>
+    <tbody id="myTable"></tbody>
+    <script>
+        async function getData() {
+            let response= await fetch('/t',{
+                method:'GET'
+            });
+            let data = await response.json();
+            console.log(data);
+        }
+        function createTable(data){
+            let txt= "";
+            for(obj of data){
+                if(obj){
+                    txt += `<tr>`;
+                    txt += `<td>${obj.id}</td>`; 
+                    txt += `<td>${obj.text}</td>`;
+                    txt += `<td>${obj.isDone}</td>`;
+                    txt += `<td>
+                                <input type="checkbox" 
+                                       ${obj.isDone ? "checked" : ""} 
+                                       onchange="toggleDone(${obj.id}, this.checked)">
+                            </td>`;
+                    txt +=`<td><button onclick="taskById(${obj.id})">✏️</button></td>`;
+                    txt +=`<td><button onclick= "deleteTask(${obj.id})">🗑️</button></td>`;
+                    txt += `</tr>`;
+                }
+            }
+            document.getElementById('myTable').innerHTML=txt;
+        }async function addTask(){
+            try{
+                let txt = document.getElementById('txt').value;
+
+                let response = await fetch('/t',{
+                    method : 'POST',
+                    headers : {'Content-type':'application/json'},
+                    body: JSON.stringify({txt})
+                })
+                if(response.status == 201){
+                    alert("נוסף בהצלחה")
+                }
+                getData();
+                document.getElementById('txt').value = "";
+            }catch(err){
+                alert(err);
+            }
+        }async function deleteTask(id){
+            try{
+                confirm("האם למחוק")
+                let response = await fetch(`/t/${id}`,{
+                    method: 'DELETE'
+                })
+                getData();
+            }catch(err){
+                alert(err);
+            }
+        }
+        async function taskById(id){
+            try{
+                let response =await fetch(`/t/${id}`);
+                let obj =await response.json();
+                document.getElementById('txt').value = obj.text;
+            }catch(err){
+                alert(err);
+            }
+        }
+        async function editTask(id){
+            try{
+                let txt = document.getElementById('txt').value;
+                let response=await fetch(`/t/${id}`,{
+                    method : 'PATCH',
+                    headers : {'Content-type': 'application/json'},
+                    body : JSON.stringify({txt})
+                })
+                getData();
+                document.getElementById('id').value = "";
+                document.getElementById('txt').value = "";
+            }catch(err){
+                alert(err);
+            }
+        }
+        function addOrEdit(){
+            let id = document.getElementById('id').value;
+            if(id){
+                editTask(id);
+            }else{
+                addTask();
+            }
+        }
+         async function toggleDone(id, isDone){
+            try{
+                await fetch(`/t/${id}`,{
+                    method : 'PATCH',
+                    headers : {'Content-type': 'application/json'},
+                    body : JSON.stringify({isDone})
+                });
+                console.log("Task updated", id, isDone);
+            }catch(err){
+                alert(err);
+            }
+        }
+        getData();
+    </script>
+ </table>
+</body>
+</html>
